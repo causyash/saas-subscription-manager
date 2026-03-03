@@ -11,7 +11,7 @@ const TrendingUpIcon = () => (
 
 const RupeeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 3h12" /><path d="M6 8h12" /><path d="M12 3v13" /><path d="M12 13a2.5 2.5 0 0 0 2.5 2.5H18" /><path d="M12 16a2.5 2.5 0 0 1-2.5 2.5H6" />
+    <path d="M6 3h12M6 8h12M6 13h8.5M21 21l-8-8M12 3v18" />
   </svg>
 );
 
@@ -56,8 +56,10 @@ export default function Analytics() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await api.get('/subscriptions');
-        setUserSubscriptions(response.data);
+        const response = await api.get('/subscriptions/user');
+        // Ensure response.data is an array
+        const subscriptions = Array.isArray(response.data) ? response.data : [];
+        setUserSubscriptions(subscriptions);
       } catch (error) {
         console.error('Error fetching subscriptions:', error);
       } finally {
@@ -76,46 +78,46 @@ export default function Analytics() {
   const stats = [
     {
       title: "Total Spent",
-      value: userSubscriptions.length > 0
+      value: Array.isArray(userSubscriptions) && userSubscriptions.length > 0
         ? `₹${userSubscriptions.reduce((sum, sub) => sum + parseFloat(sub.cost || 0), 0)}`
         : "₹0",
-      change: userSubscriptions.length > 0 ? "Your actual spending" : "No subscriptions yet",
-      trend: userSubscriptions.length > 0 ? "neutral" : "neutral",
+      change: Array.isArray(userSubscriptions) && userSubscriptions.length > 0 ? "Your actual spending" : "No subscriptions yet",
+      trend: Array.isArray(userSubscriptions) && userSubscriptions.length > 0 ? "neutral" : "neutral",
       icon: <RupeeIcon />,
       color: "blue"
     },
     {
       title: "Monthly Average",
-      value: userSubscriptions.length > 0
+      value: Array.isArray(userSubscriptions) && userSubscriptions.length > 0
         ? `₹${(userSubscriptions.reduce((sum, sub) => {
           const cost = parseFloat(sub.cost || 0);
           const monthlyCost = sub.billingCycle === "Yearly" ? cost / 12 : cost;
           return sum + monthlyCost;
         }, 0)).toFixed(0)}`
         : "₹0",
-      change: userSubscriptions.length > 0 ? "Based on your subscriptions" : "Add subscriptions to see average",
-      trend: userSubscriptions.length > 0 ? "neutral" : "neutral",
+      change: Array.isArray(userSubscriptions) && userSubscriptions.length > 0 ? "Based on your subscriptions" : "Add subscriptions to see average",
+      trend: Array.isArray(userSubscriptions) && userSubscriptions.length > 0 ? "neutral" : "neutral",
       icon: <TrendingUpIcon />,
       color: "green"
     },
     {
       title: "Active Subscriptions",
-      value: userSubscriptions.filter(s => s.status === "Active").length.toString(),
-      change: userSubscriptions.length > 0
+      value: Array.isArray(userSubscriptions) ? userSubscriptions.filter(s => s.status === "Active").length.toString() : "0",
+      change: Array.isArray(userSubscriptions) && userSubscriptions.length > 0
         ? `${userSubscriptions.filter(s => s.status === "Active").length} active services`
         : "Get started by adding subscriptions",
-      trend: userSubscriptions.length > 0 ? "neutral" : "neutral",
+      trend: Array.isArray(userSubscriptions) && userSubscriptions.length > 0 ? "neutral" : "neutral",
       icon: <PieChartIcon />,
-      color: userSubscriptions.length > 0 ? "purple" : "gray"
+      color: Array.isArray(userSubscriptions) && userSubscriptions.length > 0 ? "purple" : "gray"
     },
     {
       title: "Upcoming Renewals",
-      value: userSubscriptions.filter(s => {
+      value: Array.isArray(userSubscriptions) ? userSubscriptions.filter(s => {
         const renewalDate = new Date(s.renewalDate);
         const today = new Date();
         const nextMonth = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
         return renewalDate >= today && renewalDate <= nextMonth;
-      }).length.toString(),
+      }).length.toString() : "0",
       change: "Next 30 days",
       trend: "neutral",
       icon: <CalendarIcon />,
@@ -124,7 +126,7 @@ export default function Analytics() {
   ];
 
   // Calculate real category data
-  const categoryData = userSubscriptions.length > 0
+  const categoryData = Array.isArray(userSubscriptions) && userSubscriptions.length > 0
     ? Object.entries(
       userSubscriptions.reduce((acc, sub) => {
         acc[sub.category] = (acc[sub.category] || 0) + parseFloat(sub.cost || 0);
@@ -139,17 +141,19 @@ export default function Analytics() {
     : [];
 
   // Real top subscriptions based on user data
-  const topSubscriptions = userSubscriptions
-    .sort((a, b) => parseFloat(b.cost || 0) - parseFloat(a.cost || 0))
-    .slice(0, 5)
-    .map(sub => ({
-      name: sub.softwareName,
-      cost: parseFloat(sub.cost || 0),
-      change: "+0%" // Placeholder for actual change data
-    }));
+  const topSubscriptions = Array.isArray(userSubscriptions) 
+    ? userSubscriptions
+      .sort((a, b) => parseFloat(b.cost || 0) - parseFloat(a.cost || 0))
+      .slice(0, 5)
+      .map(sub => ({
+        name: sub.softwareName,
+        cost: parseFloat(sub.cost || 0),
+        change: "+0%" // Placeholder for actual change data
+      }))
+    : [];
 
   // Generate monthly data based on user subscriptions
-  const monthlyData = userSubscriptions.length > 0
+  const monthlyData = Array.isArray(userSubscriptions) && userSubscriptions.length > 0
     ? (() => {
       const data = [];
       const today = new Date();
@@ -175,6 +179,14 @@ export default function Analytics() {
       return data;
     })()
     : [];
+
+  const totalMonthlyCost = Array.isArray(userSubscriptions) ? userSubscriptions.reduce((sum, sub) => {
+    if (sub.status !== "Active") return sum;
+    const cost = parseFloat(sub.cost || 0);
+    if (sub.billingCycle === "Yearly") return sum + cost / 12;
+    if (sub.billingCycle === "Custom Days" && sub.customDays) return sum + (cost / sub.customDays) * 30;
+    return sum + cost;
+  }, 0) : 0;
 
   return (
     <div className="page analytics-page">
@@ -304,7 +316,7 @@ export default function Analytics() {
                     return acc;
                   }, [])}
                   <text x="50" y="45" textAnchor="middle" fill="#fff" fontSize="14" fontWeight="bold">
-                    ₹247
+                    ₹{Math.round(totalMonthlyCost)}
                   </text>
                   <text x="50" y="58" textAnchor="middle" fill="#64748b" fontSize="8">
                     /month
@@ -352,29 +364,28 @@ export default function Analytics() {
               <h3 className="chart-title">💡 Insights</h3>
             </div>
             <div className="chart-content">
-              <div className="insights-list">
-                <div className="insight-item">
-                  <div className="insight-icon">📈</div>
-                  <div className="insight-text">
-                    <strong>Spending up 12%</strong>
-                    <p>Your subscription costs increased by ₹27 compared to last month</p>
+              {userSubscriptions.length > 0 ? (
+                <div className="insights-list">
+                  <div className="insight-item">
+                    <div className="insight-icon">💡</div>
+                    <div className="insight-text">
+                      <strong>You have {userSubscriptions.filter(s => s.status === "Active").length} active subscriptions</strong>
+                      <p>Costing you approximately ₹{Math.round(totalMonthlyCost)} per month</p>
+                    </div>
+                  </div>
+                  <div className="insight-item">
+                    <div className="insight-icon">🔍</div>
+                    <div className="insight-text">
+                      <strong>Check for duplicates</strong>
+                      <p>You have {userSubscriptions.length} entries tracked on your account.</p>
+                    </div>
                   </div>
                 </div>
-                <div className="insight-item">
-                  <div className="insight-icon">💰</div>
-                  <div className="insight-text">
-                    <strong>Potential savings</strong>
-                    <p>You could save ₹45/month by switching to annual billing</p>
-                  </div>
+              ) : (
+                <div style={{ textAlign: "center", padding: "1rem" }}>
+                  <p style={{ color: "#94a3b8", fontSize: "0.9rem" }}>No data available to generate insights yet.</p>
                 </div>
-                <div className="insight-item">
-                  <div className="insight-icon">⚠️</div>
-                  <div className="insight-text">
-                    <strong>Duplicate detected</strong>
-                    <p>You have 2 video conferencing tools. Consider consolidating.</p>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -636,7 +647,7 @@ export default function Analytics() {
         .donut-svg {
           width: 180px;
           height: 180px;
-          transform: rotate(-90deg);
+          /* Remove the rotation so chart renders normally */
         }
 
         .category-legend {

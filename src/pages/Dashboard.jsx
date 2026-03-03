@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { Link } from "react-router-dom";
+import api from "../lib/api.js";
 
 // Icons
 const RupeeIcon = () => (
@@ -69,12 +70,12 @@ export default function Dashboard() {
     const fetchSubscriptions = async () => {
       try {
         setLoading(true);
-        // In a real app, this would fetch from your API
-        // For now, we'll simulate with empty array for new users
-        setUserSubscriptions([]);
+        const response = await api.get('/subscriptions/user');
+        setUserSubscriptions(response.data.data || []);
       } catch (err) {
         setError("Failed to load subscriptions");
         console.error("Error fetching subscriptions:", err);
+        setUserSubscriptions([]); // Set to empty array on error
       } finally {
         setLoading(false);
       }
@@ -84,60 +85,58 @@ export default function Dashboard() {
   }, []);
 
   // Calculate real stats based on user data
-
-  // Calculate real stats based on user data
   const stats = [
     {
       title: "Monthly Spend",
-      value: userSubscriptions.length > 0
+      value: userSubscriptions && userSubscriptions.length > 0
         ? `₹${userSubscriptions.reduce((sum, sub) => {
           const cost = parseFloat(sub.cost || 0);
           const monthlyCost = sub.billingCycle === "Yearly" ? cost / 12 : cost;
           return sum + monthlyCost;
         }, 0).toFixed(0)}`
         : "₹0",
-      change: userSubscriptions.length > 0 ? "Your actual spending" : "No subscriptions yet",
-      trend: userSubscriptions.length > 0 ? "neutral" : "neutral",
+      change: userSubscriptions && userSubscriptions.length > 0 ? "Your actual spending" : "No subscriptions yet",
+      trend: userSubscriptions && userSubscriptions.length > 0 ? "neutral" : "neutral",
       icon: <RupeeIcon />,
       color: "blue"
     },
     {
       title: "Active Subscriptions",
-      value: userSubscriptions.length.toString(),
-      change: userSubscriptions.length > 0 ? `${userSubscriptions.length} active services` : "Get started by adding your first subscription",
-      trend: userSubscriptions.length > 0 ? "neutral" : "neutral",
+      value: (userSubscriptions && userSubscriptions.length) ? userSubscriptions.length.toString() : "0",
+      change: userSubscriptions && userSubscriptions.length > 0 ? `${userSubscriptions.length} active services` : "Get started by adding your first subscription",
+      trend: userSubscriptions && userSubscriptions.length > 0 ? "neutral" : "neutral",
       icon: <CreditCardIcon />,
-      color: userSubscriptions.length > 0 ? "green" : "gray"
+      color: userSubscriptions && userSubscriptions.length > 0 ? "green" : "gray"
     },
     {
       title: "Upcoming Renewals",
-      value: userSubscriptions.filter(s => {
+      value: userSubscriptions && userSubscriptions.filter(s => {
         const renewalDate = new Date(s.renewalDate);
         const today = new Date();
         const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
         return renewalDate >= today && renewalDate <= nextWeek;
       }).length.toString(),
-      change: userSubscriptions.length > 0 ? "This week" : "No upcoming renewals",
+      change: userSubscriptions && userSubscriptions.length > 0 ? "This week" : "No upcoming renewals",
       trend: "neutral",
       icon: <CalendarIcon />,
       color: "amber"
     },
     {
       title: "Annual Savings Potential",
-      value: userSubscriptions.length > 0
+      value: userSubscriptions && userSubscriptions.length > 0
         ? `₹${userSubscriptions.filter(s => s.billingCycle === "Monthly").reduce((sum, sub) => sum + (parseFloat(sub.cost || 0) * 2), 0).toFixed(0)}`
         : "₹0",
-      change: userSubscriptions.length > 0
+      change: userSubscriptions && userSubscriptions.length > 0
         ? "Switch monthly to annual billing"
         : "Add subscriptions to see savings potential",
       trend: "up",
       icon: <TrendingDownIcon />,
-      color: userSubscriptions.length > 0 ? "success" : "gray"
+      color: userSubscriptions && userSubscriptions.length > 0 ? "success" : "gray"
     }
   ];
 
   // Get upcoming renewals from user data
-  const upcomingRenewals = userSubscriptions
+  const upcomingRenewals = userSubscriptions && userSubscriptions
     .filter(s => {
       const renewalDate = new Date(s.renewalDate);
       const today = new Date();
@@ -150,19 +149,20 @@ export default function Dashboard() {
       date: formatDate(sub.renewalDate),
       amount: `₹${sub.cost}`,
       urgent: isUrgentRenewal(sub.renewalDate)
-    }));
+    })) || [];
 
   // Get recent activity from user data
-  const recentActivity = userSubscriptions
+  const recentActivity = userSubscriptions && userSubscriptions
     .slice(0, 3)
     .map(sub => ({
       action: "Added",
       item: `${sub.softwareName} (${sub.category})`,
       time: getTimeAgo(sub.startDate)
-    }));
+    })) || [];
 
   // Helper functions
   function formatDate(dateString) {
+    if (!dateString) return '';
     const date = new Date(dateString);
     const today = new Date();
     const tomorrow = new Date(today);
@@ -177,6 +177,7 @@ export default function Dashboard() {
   }
 
   function isUrgentRenewal(dateString) {
+    if (!dateString) return false;
     const date = new Date(dateString);
     const today = new Date();
     const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
@@ -184,6 +185,7 @@ export default function Dashboard() {
   }
 
   function getTimeAgo(dateString) {
+    if (!dateString) return '';
     const date = new Date(dateString);
     const now = new Date();
     const diffHours = Math.floor((now - date) / (1000 * 60 * 60));
@@ -220,7 +222,7 @@ export default function Dashboard() {
         </div>
 
         {/* Welcome Message for New Users */}
-        {userSubscriptions.length === 0 && (
+        {userSubscriptions && userSubscriptions.length === 0 && (
           <div className="card mb-2" style={{ transform: "scale(0.85)", transformOrigin: "top center" }}>
             <div className="card-content text-center py-3">
               <div className="mb-2">
@@ -269,7 +271,7 @@ export default function Dashboard() {
                 <BellIcon />
                 Upcoming Renewals
               </h3>
-              {userSubscriptions.length > 0 && (
+              {userSubscriptions && userSubscriptions.length > 0 && (
                 <Link to="/manage" className="card-link">
                   View all
                   <ArrowRightIcon />
@@ -298,7 +300,7 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <p className="text-gray-400">
-                    {userSubscriptions.length === 0
+                    {userSubscriptions && userSubscriptions.length === 0
                       ? "Add subscriptions to see upcoming renewals"
                       : "No upcoming renewals this week"}
                   </p>
@@ -316,7 +318,7 @@ export default function Dashboard() {
               </h3>
             </div>
             <div className="activity-list">
-              {userSubscriptions.length > 0 ? (
+              {userSubscriptions && userSubscriptions.length > 0 ? (
                 <>
                   <div className="activity-item">
                     <div className="activity-badge bg-blue-500">
@@ -408,7 +410,7 @@ export default function Dashboard() {
                     </svg>
                   </div>
                   <p className="text-gray-400">
-                    {userSubscriptions.length === 0
+                    {userSubscriptions && userSubscriptions.length === 0
                       ? "Add subscriptions to see activity history"
                       : "No recent activity to display"}
                   </p>

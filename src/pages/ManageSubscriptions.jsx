@@ -6,61 +6,61 @@ import api from "../lib/api.js";
 // Icons
 const SearchIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
   </svg>
 );
 
 const FilterIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
   </svg>
 );
 
 const PlusIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M5 12h14"/><path d="M12 5v14"/>
+    <path d="M5 12h14" /><path d="M12 5v14" />
   </svg>
 );
 
 const EditIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
+    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" />
   </svg>
 );
 
 const TrashIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+    <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
   </svg>
 );
 
 const MoreHorizontalIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+    <circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" />
   </svg>
 );
 
 const CalendarIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>
+    <path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" />
   </svg>
 );
 
 const RupeeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 3h12"/><path d="M6 8h12"/><path d="M12 3v13"/><path d="M12 13a2.5 2.5 0 0 0 2.5 2.5H18"/><path d="M12 16a2.5 2.5 0 0 1-2.5 2.5H6"/>
+    <path d="M6 3h12M6 8h12M6 13h8.5M21 21l-8-8M12 3v18" />
   </svg>
 );
 
 const ArrowUpDownIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/>
+    <path d="m21 16-4 4-4-4" /><path d="M17 20V4" /><path d="m3 8 4-4 4 4" /><path d="M7 4v16" />
   </svg>
 );
 
 const PackageIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
+    <path d="m7.5 4.27 9 5.15" /><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" />
   </svg>
 );
 
@@ -76,8 +76,10 @@ export default function ManageSubscriptions() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await api.get('/subscriptions');
-        setUserSubscriptions(response.data);
+        const response = await api.get('/subscriptions/user');
+        // Ensure response.data is an array
+        const subscriptions = Array.isArray(response.data) ? response.data : [];
+        setUserSubscriptions(subscriptions);
       } catch (error) {
         console.error('Error fetching subscriptions:', error);
         setUserSubscriptions([]);
@@ -85,7 +87,7 @@ export default function ManageSubscriptions() {
         setLoading(false);
       }
     };
-    
+
     if (user) {
       fetchData();
     } else {
@@ -93,25 +95,25 @@ export default function ManageSubscriptions() {
     }
   }, [user]);
 
-  const categories = ["All", ...new Set(userSubscriptions.map(s => s.category))];
+  const categories = ["All", ...new Set(Array.isArray(userSubscriptions) ? userSubscriptions.map(s => s.category) : [])];
 
   const filtered = useMemo(() => {
-    let result = userSubscriptions.filter((s) => {
+    let result = Array.isArray(userSubscriptions) ? userSubscriptions.filter((s) => {
       const matchesQuery = s.softwareName.toLowerCase().includes(query.toLowerCase());
       const matchesCategory = category && category !== "All" ? s.category === category : true;
       return matchesQuery && matchesCategory;
-    });
+    }) : [];
 
     // Sort
     result.sort((a, b) => {
       let aVal = a[sortBy];
       let bVal = b[sortBy];
-      
+
       if (sortBy === "renewalDate") {
         aVal = new Date(aVal);
         bVal = new Date(bVal);
       }
-      
+
       if (sortOrder === "asc") {
         return aVal > bVal ? 1 : -1;
       } else {
@@ -147,13 +149,20 @@ export default function ManageSubscriptions() {
     }
   };
 
-  const totalMonthly = filtered
+  const totalMonthly = Array.isArray(filtered) ? filtered
     .filter(s => s.status === "Active")
     .reduce((sum, s) => {
       const cost = parseFloat(s.cost || 0);
-      const monthlyCost = s.billingCycle === "Yearly" ? cost / 12 : cost;
+      let monthlyCost = cost;
+      if (s.billingCycle === "Yearly") {
+        monthlyCost = cost / 12;
+      } else if (s.billingCycle === "Custom Days" && s.customDays) {
+        // Find per day cost, multiply by 30 to get approximate monthly equivalent cost
+        const dailyCost = cost / s.customDays;
+        monthlyCost = dailyCost * 30;
+      }
       return sum + monthlyCost;
-    }, 0);
+    }, 0) : 0;
 
   return (
     <div className="page manage-page">
@@ -202,7 +211,7 @@ export default function ManageSubscriptions() {
               className="search-input"
             />
           </div>
-          
+
           <div className="filter-group">
             <div className="filter-select-wrapper">
               <FilterIcon />
@@ -218,7 +227,7 @@ export default function ManageSubscriptions() {
               </select>
             </div>
 
-            <button 
+            <button
               className="sort-btn"
               onClick={() => toggleSort("renewalDate")}
             >
@@ -265,18 +274,20 @@ export default function ManageSubscriptions() {
                         <div className="cost-cell">
                           <RupeeIcon />
                           <span>₹{s.cost}</span>
-                          <span className="cycle">/{s.billingCycle.toLowerCase().slice(0, -2)}</span>
+                          <span className="cycle">
+                            /{s.billingCycle === "Custom Days" ? `${s.customDays}d` : s.billingCycle.toLowerCase().slice(0, -2)}
+                          </span>
                         </div>
                       </td>
                       <td>
                         <div className="renewal-cell">
                           <CalendarIcon />
                           <span>{new Date(s.renewalDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                          <span 
+                          <span
                             className="renewal-badge"
-                            style={{ 
-                              color: renewalStatus.color, 
-                              backgroundColor: renewalStatus.bg 
+                            style={{
+                              color: renewalStatus.color,
+                              backgroundColor: renewalStatus.bg
                             }}
                           >
                             {renewalStatus.label}
@@ -293,8 +304,8 @@ export default function ManageSubscriptions() {
                           <button className="action-btn edit" title="Edit">
                             <EditIcon />
                           </button>
-                          <button 
-                            className="action-btn delete" 
+                          <button
+                            className="action-btn delete"
                             title="Delete"
                             onClick={() => onDelete(s.id)}
                           >
@@ -318,8 +329,8 @@ export default function ManageSubscriptions() {
             </div>
             <h3 className="empty-state-title">No subscriptions found</h3>
             <p className="empty-state-text">
-              {query || category 
-                ? "Try adjusting your search or filters" 
+              {query || category
+                ? "Try adjusting your search or filters"
                 : "Start by adding your first subscription to track"}
             </p>
             {!query && !category && (

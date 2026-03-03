@@ -1,58 +1,59 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import api from "../lib/api.js";
 
 // Icons
 const ArrowLeftIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>
+    <path d="m12 19-7-7 7-7" /><path d="M19 12H5" />
   </svg>
 );
 
 const PackageIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
+    <path d="m7.5 4.27 9 5.15" /><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" />
   </svg>
 );
 
 const TagIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/>
+    <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" /><path d="M7 7h.01" />
   </svg>
 );
 
 const RupeeIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M6 3h12"/><path d="M6 8h12"/><path d="M12 3v13"/><path d="M12 13a2.5 2.5 0 0 0 2.5 2.5H18"/><path d="M12 16a2.5 2.5 0 0 1-2.5 2.5H6"/>
+    <path d="M6 3h12M6 8h12M6 13h8.5M21 21l-8-8M12 3v18" />
   </svg>
 );
 
 const CalendarIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>
+    <path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" />
   </svg>
 );
 
 const CreditCardIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
+    <rect width="20" height="14" x="2" y="5" rx="2" /><line x1="2" x2="22" y1="10" y2="10" />
   </svg>
 );
 
 const FileTextIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>
+    <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="M10 9H8" /><path d="M16 13H8" /><path d="M16 17H8" />
   </svg>
 );
 
 const CheckIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 6 9 17l-5-5"/>
+    <path d="M20 6 9 17l-5-5" />
   </svg>
 );
 
 const SparklesIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
   </svg>
 );
 
@@ -63,6 +64,7 @@ export default function AddSubscription() {
     category: "",
     cost: "",
     billingCycle: "Monthly",
+    customDays: "",
     startDate: "",
     renewalDate: "",
     paymentMethod: "",
@@ -105,50 +107,31 @@ export default function AddSubscription() {
 
   function update(key, val) {
     setForm({ ...form, [key]: val });
-    
+
     // Auto-calculate renewal date with proper business logic
-    if (key === "startDate" && val && form.billingCycle) {
-      const start = new Date(val);
-      let renewal = new Date(start);
-      
-      if (form.billingCycle === "Monthly") {
-        // Add exactly one month (handles different month lengths)
+    if ((key === "startDate" || key === "billingCycle" || key === "customDays") && form.startDate) {
+      const activeStartDate = key === "startDate" ? new Date(val) : new Date(form.startDate);
+      const activeBillingCycle = key === "billingCycle" ? val : form.billingCycle;
+      const activeCustomDays = key === "customDays" ? parseInt(val) : parseInt(form.customDays);
+
+      let renewal = new Date(activeStartDate);
+
+      if (activeBillingCycle === "Monthly") {
         renewal.setMonth(renewal.getMonth() + 1);
-        // Adjust for month-end dates
-        if (start.getDate() > 28 && renewal.getDate() < start.getDate()) {
-          renewal.setDate(0); // Last day of previous month
-        }
-      } else {
-        // Add exactly one year
-        renewal.setFullYear(renewal.getFullYear() + 1);
-        // Handle leap year edge case
-        if (start.getMonth() === 1 && start.getDate() === 29) {
-          if (!isLeapYear(renewal.getFullYear())) {
-            renewal.setDate(28);
-          }
-        }
-      }
-      
-      setForm(prev => ({ ...prev, [key]: val, renewalDate: renewal.toISOString().split('T')[0] }));
-    } else if (key === "billingCycle" && val && form.startDate) {
-      // Recalculate when billing cycle changes
-      const start = new Date(form.startDate);
-      let renewal = new Date(start);
-      
-      if (val === "Monthly") {
-        renewal.setMonth(renewal.getMonth() + 1);
-        if (start.getDate() > 28 && renewal.getDate() < start.getDate()) {
+        if (activeStartDate.getDate() > 28 && renewal.getDate() < activeStartDate.getDate()) {
           renewal.setDate(0);
         }
-      } else {
+      } else if (activeBillingCycle === "Yearly") {
         renewal.setFullYear(renewal.getFullYear() + 1);
-        if (start.getMonth() === 1 && start.getDate() === 29) {
+        if (activeStartDate.getMonth() === 1 && activeStartDate.getDate() === 29) {
           if (!isLeapYear(renewal.getFullYear())) {
             renewal.setDate(28);
           }
         }
+      } else if (activeBillingCycle === "Custom Days" && activeCustomDays) {
+        renewal.setDate(renewal.getDate() + activeCustomDays);
       }
-      
+
       setForm(prev => ({ ...prev, [key]: val, renewalDate: renewal.toISOString().split('T')[0] }));
     } else {
       setForm(prev => ({ ...prev, [key]: val }));
@@ -160,7 +143,7 @@ export default function AddSubscription() {
     return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
   }
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -190,7 +173,7 @@ export default function AddSubscription() {
     const startDate = new Date(form.startDate);
     const renewalDate = new Date(form.renewalDate);
     const today = new Date();
-    
+
     if (renewalDate <= startDate) {
       setError("Renewal date must be after start date");
       return;
@@ -207,7 +190,7 @@ export default function AddSubscription() {
     // Business logic validation
     const timeDiff = renewalDate - startDate;
     const daysDiff = timeDiff / (1000 * 60 * 60 * 24);
-    
+
     if (form.billingCycle === "Monthly" && daysDiff > 35) {
       setError("For monthly billing, renewal should be approximately 30 days after start date");
       return;
@@ -216,15 +199,39 @@ export default function AddSubscription() {
       setError("For yearly billing, renewal should be approximately 365 days after start date");
       return;
     }
+    if (form.billingCycle === "Custom Days" && !form.customDays) {
+      setError("Please specify the number of days for the custom billing cycle");
+      return;
+    }
 
     setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
+
+    try {
+      const payload = {
+        softwareName: form.softwareName,
+        category: form.category,
+        cost: Number(form.cost),
+        billingCycle: form.billingCycle,
+        startDate: form.startDate,
+        renewalDate: form.renewalDate,
+        paymentMethod: form.paymentMethod || undefined,
+        notes: form.notes || undefined,
+      };
+
+      if (form.billingCycle === "Custom Days") {
+        payload.customDays = Number(form.customDays);
+      }
+
+      await api.post('/subscriptions', payload);
       setSuccess("Subscription added successfully!");
-      setIsSubmitting(false);
+
       setTimeout(() => navigate("/manage"), 1500);
-    }, 800);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to add subscription");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -251,7 +258,7 @@ export default function AddSubscription() {
           {error && (
             <div className="alert alert-error">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+                <circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" />
               </svg>
               {error}
             </div>
@@ -260,7 +267,7 @@ export default function AddSubscription() {
           {success && (
             <div className="alert alert-success">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="m9 11 3 3L22 4" />
               </svg>
               {success}
             </div>
@@ -274,7 +281,7 @@ export default function AddSubscription() {
                   <PackageIcon />
                   Basic Information
                 </h3>
-                
+
                 <div className="form-group">
                   <label className="form-label">
                     Software Name <span className="required">*</span>
@@ -317,7 +324,7 @@ export default function AddSubscription() {
                   <RupeeIcon />
                   Pricing Details
                 </h3>
-                
+
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">
@@ -341,14 +348,30 @@ export default function AddSubscription() {
                     <label className="form-label">
                       Billing Cycle <span className="required">*</span>
                     </label>
-                    <select
-                      value={form.billingCycle}
-                      onChange={(e) => update("billingCycle", e.target.value)}
-                      className="form-input"
-                    >
-                      <option value="Monthly">Monthly</option>
-                      <option value="Yearly">Yearly</option>
-                    </select>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <select
+                        value={form.billingCycle}
+                        onChange={(e) => update("billingCycle", e.target.value)}
+                        className="form-input"
+                        style={{ flex: form.billingCycle === 'Custom Days' ? '1' : '100%' }}
+                      >
+                        <option value="Monthly">Monthly</option>
+                        <option value="Yearly">Yearly</option>
+                        <option value="Custom Days">Custom Days</option>
+                      </select>
+
+                      {form.billingCycle === "Custom Days" && (
+                        <input
+                          type="number"
+                          placeholder="Days (e.g. 84)"
+                          min="1"
+                          value={form.customDays}
+                          onChange={(e) => update("customDays", e.target.value)}
+                          className="form-input"
+                          style={{ flex: '1', minWidth: '80px' }}
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -359,7 +382,7 @@ export default function AddSubscription() {
                   <CalendarIcon />
                   Important Dates
                 </h3>
-                
+
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">
@@ -400,7 +423,7 @@ export default function AddSubscription() {
                   <CreditCardIcon />
                   Payment Information
                 </h3>
-                
+
                 <div className="form-group">
                   <label className="form-label">Payment Method</label>
                   <div className="input-wrapper">
@@ -425,7 +448,7 @@ export default function AddSubscription() {
                   <FileTextIcon />
                   Additional Notes
                 </h3>
-                
+
                 <div className="form-group">
                   <label className="form-label">Notes</label>
                   <textarea
