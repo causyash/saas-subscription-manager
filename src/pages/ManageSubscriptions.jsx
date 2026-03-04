@@ -72,13 +72,18 @@ export default function ManageSubscriptions() {
   const [sortOrder, setSortOrder] = useState("asc");
   const [userSubscriptions, setUserSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actionBusyId, setActionBusyId] = useState(null);
+  const [notice, setNotice] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSub, setEditSub] = useState(null);
+  const [editCost, setEditCost] = useState("");
+  const [editRenewal, setEditRenewal] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await api.get('/subscriptions/user');
-        // Ensure response.data is an array
-        const subscriptions = Array.isArray(response.data) ? response.data : [];
+        const subscriptions = Array.isArray(response.data?.data) ? response.data.data : [];
         setUserSubscriptions(subscriptions);
       } catch (error) {
         console.error('Error fetching subscriptions:', error);
@@ -122,7 +127,7 @@ export default function ManageSubscriptions() {
     });
 
     return result;
-  }, [query, category, sortBy, sortOrder]);
+  }, [query, category, sortBy, sortOrder, userSubscriptions]);
 
   const colorForRenewal = (dateStr) => {
     const d = new Date(dateStr);
@@ -134,9 +139,84 @@ export default function ManageSubscriptions() {
   };
 
   const onDelete = (id) => {
-    const ok = confirm("Are you sure you want to delete this subscription?");
-    if (ok) {
-      alert("Deleted subscription " + id);
+    const run = async () => {
+      try {
+        setActionBusyId(id);
+        await api.delete(`/subscriptions/${id}`);
+        setUserSubscriptions(prev => prev.filter(s => s._id !== id));
+        setNotice({ type: "success", message: "Subscription deleted" });
+      } catch (err) {
+        console.error('Delete error:', err);
+        setNotice({ type: "error", message: err.response?.data?.message || "Failed to delete subscription" });
+      } finally {
+        setActionBusyId(null);
+      }
+    };
+    run();
+  };
+
+  const onEdit = (sub) => {
+    setEditSub(sub);
+    setEditCost(String(sub.cost ?? ""));
+    setEditRenewal(new Date(sub.renewalDate).toISOString().slice(0,10));
+    setEditOpen(true);
+  };
+
+  const onMore = (sub) => {
+    const choice = prompt(
+      `Choose action for ${sub.softwareName}:\n- cancel\n- activate\n- duplicate`,
+      "cancel"
+    );
+    if (!choice) return;
+    const act = choice.trim().toLowerCase();
+    if (act === "cancel" || act === "activate") {
+      const status = act === "cancel" ? "Cancelled" : "Active";
+      const run = async () => {
+        try {
+          setActionBusyId(sub._id);
+          const res = await api.put(`/subscriptions/${sub._id}`, { status });
+          const updated = res.data?.data || { ...sub, status };
+          setUserSubscriptions(prev => prev.map(s => s._id === sub._id ? { ...s, ...updated } : s));
+          setNotice({ type: "success", message: `Marked as ${status}` });
+        } catch (err) {
+          console.error('Status change error:', err);
+          setNotice({ type: "error", message: err.response?.data?.message || "Failed to change status" });
+        } finally {
+          setActionBusyId(null);
+        }
+      };
+      run();
+    } else if (act === "duplicate") {
+      const run = async () => {
+        try {
+          setActionBusyId(sub._id);
+          const payload = {
+            softwareName: sub.softwareName,
+            category: sub.category,
+            cost: Number(sub.cost || 0),
+            billingCycle: sub.billingCycle,
+            startDate: new Date(sub.startDate).toISOString().split('T')[0],
+            renewalDate: new Date(sub.renewalDate).toISOString().split('T')[0],
+            paymentMethod: sub.paymentMethod || undefined,
+            notes: sub.notes || undefined,
+            ...(sub.billingCycle === "Custom Days" && sub.customDays ? { customDays: Number(sub.customDays) } : {})
+          };
+          const res = await api.post('/subscriptions', payload);
+          const created = res.data?.data;
+          if (created) {
+            setUserSubscriptions(prev => [created, ...prev]);
+          }
+          setNotice({ type: "success", message: "Subscription duplicated" });
+        } catch (err) {
+          console.error('Duplicate error:', err);
+          setNotice({ type: "error", message: err.response?.data?.message || "Failed to duplicate subscription" });
+        } finally {
+          setActionBusyId(null);
+        }
+      };
+      run();
+    } else {
+      setNotice({ type: "warning", message: "Unknown action" });
     }
   };
 
@@ -150,7 +230,7 @@ export default function ManageSubscriptions() {
   };
 
   const totalMonthly = Array.isArray(filtered) ? filtered
-    .filter(s => s.status === "Active")
+    .filter(s => String(s.status || "").toLowerCase() === "active")
     .reduce((sum, s) => {
       const cost = parseFloat(s.cost || 0);
       let monthlyCost = cost;
@@ -255,7 +335,7 @@ export default function ManageSubscriptions() {
                 {filtered.map((s) => {
                   const renewalStatus = colorForRenewal(s.renewalDate);
                   return (
-                    <tr key={s.id}>
+                    <tr key={s._id}>
                       <td>
                         <div className="service-cell">
                           <div className="service-icon">
@@ -301,17 +381,18 @@ export default function ManageSubscriptions() {
                       </td>
                       <td>
                         <div className="actions-cell">
-                          <button className="action-btn edit" title="Edit">
+                          <button className="action-btn edit" title="Edit" onClick={() => onEdit(s)} disabled={actionBusyId === s._id}>
                             <EditIcon />
                           </button>
                           <button
                             className="action-btn delete"
                             title="Delete"
-                            onClick={() => onDelete(s.id)}
+                            onClick={() => onDelete(s._id)}
+                            disabled={actionBusyId === s._id}
                           >
                             <TrashIcon />
                           </button>
-                          <button className="action-btn more" title="More">
+                          <button className="action-btn more" title="More" onClick={() => onMore(s)} disabled={actionBusyId === s._id}>
                             <MoreHorizontalIcon />
                           </button>
                         </div>
@@ -362,6 +443,61 @@ export default function ManageSubscriptions() {
             <span>Active</span>
           </div>
         </div>
+
+        {/* Inline Notice */}
+        {notice && (
+          <div className={`alert ${notice.type === 'success' ? 'alert-success' : notice.type === 'error' ? 'alert-error' : 'alert-warning'}`} style={{ marginTop: '1rem' }}>
+            {notice.message}
+            <button className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto' }} onClick={() => setNotice(null)}>Dismiss</button>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {editOpen && editSub && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
+            <div className="card" style={{ maxWidth: 480, width: '92%' }}>
+              <div className="card-header">
+                <div className="card-title">Edit Subscription</div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Cost (INR)</label>
+                <input className="form-input" type="number" min="0" value={editCost} onChange={(e) => setEditCost(e.target.value)} />
+              </div>
+              <div className="form-group" style={{ marginTop: '0.75rem' }}>
+                <label className="form-label">Renewal Date</label>
+                <input className="form-input" type="date" value={editRenewal} onChange={(e) => setEditRenewal(e.target.value)} />
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', justifyContent: 'flex-end' }}>
+                <button className="btn btn-secondary" onClick={() => setEditOpen(false)}>Cancel</button>
+                <button
+                  className="btn btn-primary"
+                  onClick={async () => {
+                    const newCost = parseFloat(editCost);
+                    if (Number.isNaN(newCost) || newCost < 0) {
+                      setNotice({ type: "warning", message: "Invalid cost" });
+                      return;
+                    }
+                    try {
+                      setActionBusyId(editSub._id);
+                      const res = await api.put(`/subscriptions/${editSub._id}`, { cost: newCost, renewalDate: editRenewal });
+                      const updated = res.data?.data || { ...editSub, cost: newCost, renewalDate: editRenewal };
+                      setUserSubscriptions(prev => prev.map(s => s._id === editSub._id ? { ...s, ...updated } : s));
+                      setNotice({ type: "success", message: "Subscription updated" });
+                      setEditOpen(false);
+                    } catch (err) {
+                      console.error('Update error:', err);
+                      setNotice({ type: "error", message: err.response?.data?.message || "Failed to update subscription" });
+                    } finally {
+                      setActionBusyId(null);
+                    }
+                  }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <style>{`

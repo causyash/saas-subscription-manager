@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 import api from "../lib/api.js";
 
 // Icons
@@ -59,6 +60,7 @@ const SparklesIcon = () => (
 
 export default function AddSubscription() {
   const navigate = useNavigate();
+  const { token } = useAuth();
   const [form, setForm] = useState({
     softwareName: "",
     category: "",
@@ -160,14 +162,6 @@ export default function AddSubscription() {
       setError("Cost must be non-negative");
       return;
     }
-    if (cost > 10000) {
-      setError("Cost seems unusually high. Please verify the amount.");
-      return;
-    }
-    if (form.billingCycle === "Monthly" && cost > 1000) {
-      setError("Monthly cost seems high. Consider if this should be annual billing.");
-      return;
-    }
 
     // Date validation
     const startDate = new Date(form.startDate);
@@ -207,6 +201,12 @@ export default function AddSubscription() {
     setIsSubmitting(true);
 
     try {
+      // Ensure auth token exists; backend will derive user from token
+      if (!token) {
+        setError("Authentication required. Please log in.");
+        return;
+      }
+
       const payload = {
         softwareName: form.softwareName,
         category: form.category,
@@ -215,14 +215,16 @@ export default function AddSubscription() {
         startDate: form.startDate,
         renewalDate: form.renewalDate,
         paymentMethod: form.paymentMethod || undefined,
-        notes: form.notes || undefined,
+        notes: form.notes || undefined
       };
 
       if (form.billingCycle === "Custom Days") {
         payload.customDays = Number(form.customDays);
       }
 
-      await api.post('/subscriptions', payload);
+      await api.post('/subscriptions', payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setSuccess("Subscription added successfully!");
 
       setTimeout(() => navigate("/manage"), 1500);

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ScatterChart, Scatter } from "recharts";
 import { useAuth } from "../context/AuthContext.jsx";
 import api from "../lib/api.js";
 
@@ -47,6 +48,8 @@ const ArrowDownIcon = () => (
 
 export default function Analytics() {
   const [timeRange, setTimeRange] = useState("6months");
+  const [adjustPct, setAdjustPct] = useState(0);
+  const [resolution, setResolution] = useState("monthly");
 
   // Real data from user context
   const { user } = useAuth();
@@ -57,8 +60,7 @@ export default function Analytics() {
     const fetchData = async () => {
       try {
         const response = await api.get('/subscriptions/user');
-        // Ensure response.data is an array
-        const subscriptions = Array.isArray(response.data) ? response.data : [];
+        const subscriptions = Array.isArray(response.data?.data) ? response.data.data : [];
         setUserSubscriptions(subscriptions);
       } catch (error) {
         console.error('Error fetching subscriptions:', error);
@@ -73,6 +75,8 @@ export default function Analytics() {
       setLoading(false);
     }
   }, [user]);
+
+  const isActive = (s) => String(s?.status || "").toLowerCase() === "active";
 
   // Calculate real stats based on user data
   const stats = [
@@ -102,9 +106,9 @@ export default function Analytics() {
     },
     {
       title: "Active Subscriptions",
-      value: Array.isArray(userSubscriptions) ? userSubscriptions.filter(s => s.status === "Active").length.toString() : "0",
+      value: Array.isArray(userSubscriptions) ? userSubscriptions.filter(isActive).length.toString() : "0",
       change: Array.isArray(userSubscriptions) && userSubscriptions.length > 0
-        ? `${userSubscriptions.filter(s => s.status === "Active").length} active services`
+        ? `${userSubscriptions.filter(isActive).length} active services`
         : "Get started by adding subscriptions",
       trend: Array.isArray(userSubscriptions) && userSubscriptions.length > 0 ? "neutral" : "neutral",
       icon: <PieChartIcon />,
@@ -152,36 +156,140 @@ export default function Analytics() {
       }))
     : [];
 
-  // Generate monthly data based on user subscriptions
-  const monthlyData = Array.isArray(userSubscriptions) && userSubscriptions.length > 0
-    ? (() => {
-      const data = [];
-      const today = new Date();
-      for (let i = 5; i >= 0; i--) {
-        const month = new Date(today.getFullYear(), today.getMonth() - i, 1);
-        const monthName = month.toLocaleString('default', { month: 'short' });
-
-        // Calculate spending for this month
-        const monthSpending = userSubscriptions
-          .filter(sub => {
-            const subDate = new Date(sub.renewalDate);
-            return subDate.getMonth() === month.getMonth() &&
-              subDate.getFullYear() === month.getFullYear() &&
-              sub.status === "Active";
-          })
-          .reduce((sum, sub) => {
-            const cost = parseFloat(sub.cost || 0);
-            return sum + (sub.billingCycle === "Yearly" ? cost / 12 : cost);
-          }, 0);
-
-        data.push({ month: monthName, amount: Math.round(monthSpending) });
+  // Generate monthly data based on user subscriptions (default to zeros if none)
+  const paymentsData = (() => {
+    const subs = Array.isArray(userSubscriptions) ? userSubscriptions : [];
+    const today = new Date();
+    let start, end;
+    if (resolution === "daily") {
+      start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29);
+      end = today;
+    } else if (resolution === "weekly") {
+      start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7 * 11);
+      end = today;
+    } else if (resolution === "yearly") {
+      start = new Date(today.getFullYear() - 4, 0, 1);
+      end = new Date(today.getFullYear(), 11, 31);
+    } else {
+      start = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+      end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    }
+    const events = [];
+    subs.forEach((s) => {
+      if (!isActive(s)) return;
+      const cycle = String(s.billingCycle || "");
+      const cost = parseFloat(s.cost || 0);
+      let pay = new Date(s.startDate);
+      if (Number.isNaN(pay.getTime())) return;
+      if (cycle === "Monthly") {
+        if (pay < start) {
+          const monthsDiff = (start.getFullYear() - pay.getFullYear()) * 12 + (start.getMonth() - pay.getMonth());
+          pay = new Date(pay.getFullYear(), pay.getMonth() + Math.max(0, monthsDiff), pay.getDate());
+        }
+        while (pay <= end) {
+          events.push({ date: new Date(pay), amount: cost });
+          pay = new Date(pay.getFullYear(), pay.getMonth() + 1, pay.getDate());
+        }
+      } else if (cycle === "Yearly") {
+        while (pay <= end) {
+          if (pay >= start) events.push({ date: new Date(pay), amount: cost });
+          pay = new Date(pay.getFullYear() + 1, pay.getMonth(), pay.getDate());
+        }
+      } else if (cycle === "Custom Days" && s.customDays) {
+        const stepDays = Math.max(1, parseInt(s.customDays));
+        while (pay <= end) {
+          if (pay >= start) events.push({ date: new Date(pay), amount: cost });
+          pay = new Date(pay.getTime() + stepDays * 24 * 60 * 60 * 1000);
+        }
+      } else {
+        if (pay >= start && pay <= end) events.push({ date: new Date(pay), amount: cost });
       }
-      return data;
-    })()
-    : [];
+    });
+    events.sort((a, b) => a.date - b.date);
+    if (resolution === "daily") {
+      const byDay = {};
+      events.forEach((e) => {
+        const key = e.date.toISOString().slice(0, 10);
+        if (!byDay[key]) byDay[key] = [];
+        byDay[key].push(e);
+      });
+      const jittered = [];
+      Object.keys(byDay).forEach((key) => {
+        byDay[key].forEach((e, idx) => {
+          const base = new Date(key + "T00:00:00").getTime();
+          const ts = base + idx * 15 * 60 * 1000;
+          jittered.push({ ts, amount: e.amount, label: key });
+        });
+      });
+      const rangeDays = [];
+      for (let d = new Date(start); d <= end; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) {
+        rangeDays.push(d.toISOString().slice(0, 10));
+      }
+      return { type: "daily", points: jittered, domain: [new Date(start).getTime(), new Date(end).getTime()], labels: rangeDays };
+    } else if (resolution === "weekly") {
+      const weekSum = {};
+      const weekLabel = {};
+      const weekStart = (d) => {
+        const date = new Date(d);
+        const day = date.getDay();
+        const diff = (day + 6) % 7;
+        date.setDate(date.getDate() - diff);
+        date.setHours(0, 0, 0, 0);
+        return date;
+      };
+      events.forEach((e) => {
+        const ws = weekStart(e.date);
+        const key = ws.toISOString().slice(0, 10);
+        weekSum[key] = (weekSum[key] || 0) + e.amount;
+        const weekNumber = Math.floor((ws.getDate() - 1) / 7) + 1;
+        weekLabel[key] = `W${weekNumber} ${ws.toLocaleString('default', { month: 'short' })}`;
+      });
+      const weeks = [];
+      for (let i = 11; i >= 0; i--) {
+        const w = weekStart(new Date(end.getFullYear(), end.getMonth(), end.getDate() - i * 7));
+        const key = w.toISOString().slice(0, 10);
+        weeks.push({ name: weekLabel[key] || `W${Math.floor((w.getDate() - 1) / 7) + 1} ${w.toLocaleString('default', { month: 'short' })}`, amount: Math.round(weekSum[key] || 0) });
+      }
+      return { type: "weekly", series: weeks };
+    } else if (resolution === "yearly") {
+      const yearSum = {};
+      events.forEach((e) => {
+        const y = e.date.getFullYear();
+        yearSum[y] = (yearSum[y] || 0) + e.amount;
+      });
+      const years = [];
+      for (let y = start.getFullYear(); y <= end.getFullYear(); y++) {
+        years.push({ name: String(y), amount: Math.round(yearSum[y] || 0) });
+      }
+      return { type: "yearly", series: years };
+    } else {
+      const monthSum = {};
+      events.forEach((e) => {
+        const key = `${e.date.getFullYear()}-${e.date.getMonth()}`;
+        monthSum[key] = (monthSum[key] || 0) + e.amount;
+      });
+      const months = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(end.getFullYear(), end.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        months.push({ month: d.toLocaleString('default', { month: 'short' }), amount: Math.round(monthSum[key] || 0) });
+      }
+      return { type: "monthly", series: months };
+    }
+  })();
+
+  const projectedSeries = paymentsData.type === "daily"
+    ? paymentsData.points.map(p => ({ ts: p.ts, amount: Math.round(p.amount * (1 + (parseFloat(adjustPct) || 0) / 100)), label: p.label }))
+    : paymentsData.type === "monthly"
+      ? paymentsData.series.map(d => ({ ...d, amount: Math.round(d.amount * (1 + (parseFloat(adjustPct) || 0) / 100)) }))
+      : paymentsData.series.map(d => ({ ...d, amount: Math.round(d.amount * (1 + (parseFloat(adjustPct) || 0) / 100)) }));
+
+  const maxAxis = paymentsData.type === "daily"
+    ? Math.max(300, ...paymentsData.points.map(p => p.amount), ...projectedSeries.map(p => p.amount))
+    : Math.max(300, ...paymentsData.series.map(d => d.amount), ...projectedSeries.map(d => d.amount));
 
   const totalMonthlyCost = Array.isArray(userSubscriptions) ? userSubscriptions.reduce((sum, sub) => {
-    if (sub.status !== "Active") return sum;
+    if (!isActive(sub)) return sum;
     const cost = parseFloat(sub.cost || 0);
     if (sub.billingCycle === "Yearly") return sum + cost / 12;
     if (sub.billingCycle === "Custom Days" && sub.customDays) return sum + (cost / sub.customDays) * 30;
@@ -211,6 +319,25 @@ export default function Analytics() {
               <option value="6months">Last 6 Months</option>
               <option value="1year">Last Year</option>
             </select>
+            <select
+              className="form-input"
+              value={resolution}
+              onChange={(e) => setResolution(e.target.value)}
+              style={{ width: 'auto' }}
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+            <input
+              className="form-input"
+              type="number"
+              placeholder="What-if % (e.g., -10 for savings)"
+              value={adjustPct}
+              onChange={(e) => setAdjustPct(e.target.value)}
+              style={{ width: '220px' }}
+            />
             <button className="btn btn-secondary">
               <DownloadIcon />
               Export
@@ -251,36 +378,28 @@ export default function Analytics() {
                 </span>
               </div>
             </div>
-            <div className="chart-content">
-              <div className="trend-chart">
-                <div className="chart-y-axis">
-                  <span>₹300</span>
-                  <span>₹200</span>
-                  <span>₹100</span>
-                  <span>₹0</span>
-                </div>
-                <div className="chart-bars-area">
-                  <div className="chart-grid-lines">
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                  </div>
-                  <div className="trend-bars">
-                    {monthlyData.map((data, i) => (
-                      <div key={i} className="trend-bar-wrapper">
-                        <div
-                          className="trend-bar"
-                          style={{ height: `${(data.amount / 300) * 100}%` }}
-                        >
-                          <span className="bar-value">₹{data.amount}</span>
-                        </div>
-                        <span className="bar-label">{data.month}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+            <div className="chart-content" style={{ height: 280 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                {paymentsData.type === "daily" ? (
+                  <ScatterChart>
+                    <CartesianGrid stroke="rgba(255,255,255,0.08)" />
+                    <XAxis type="number" dataKey="ts" domain={[paymentsData.domain[0], paymentsData.domain[1]]} tickFormatter={(ts) => new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                    <YAxis type="number" dataKey="amount" domain={[0, maxAxis]} tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(v) => `₹${v}`} />
+                    <Tooltip formatter={(val) => [`₹${val}`, 'Payment']} labelFormatter={(ts) => new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.08)' }} />
+                    <Scatter name="Actual" data={paymentsData.points} fill="#3b82f6" />
+                    <Scatter name="Projected" data={projectedSeries} fill="#8b5cf6" />
+                  </ScatterChart>
+                ) : (
+                  <LineChart data={paymentsData.series}>
+                    <CartesianGrid stroke="rgba(255,255,255,0.08)" />
+                    <XAxis dataKey={paymentsData.type === "monthly" ? "month" : "name"} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                    <YAxis domain={[0, maxAxis]} tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(v) => `₹${v}`} />
+                    <Tooltip formatter={(val) => [`₹${val}`, 'Spend']} labelFormatter={(label) => label} contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.08)' }} />
+                    <Line type="monotone" dataKey="amount" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, stroke: '#8b5cf6', strokeWidth: 1 }} activeDot={{ r: 5 }} />
+                    <Line type="monotone" data={projectedSeries} dataKey="amount" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 0 }} name="Projected" />
+                  </LineChart>
+                )}
+              </ResponsiveContainer>
             </div>
           </div>
 
@@ -290,38 +409,25 @@ export default function Analytics() {
               <h3 className="chart-title">Spending by Category</h3>
             </div>
             <div className="chart-content">
-              <div className="donut-chart">
-                <svg viewBox="0 0 100 100" className="donut-svg">
-                  {categoryData.reduce((acc, cat, i) => {
-                    const prevPercent = categoryData.slice(0, i).reduce((sum, c) => sum + c.percent, 0);
-                    const circumference = 2 * Math.PI * 40;
-                    const offset = circumference - (cat.percent / 100) * circumference;
-                    const rotation = (prevPercent / 100) * 360 - 90;
-
-                    acc.push(
-                      <circle
-                        key={i}
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        fill="none"
-                        stroke={cat.color}
-                        strokeWidth="12"
-                        strokeDasharray={circumference}
-                        strokeDashoffset={offset}
-                        transform={`rotate(${rotation} 50 50)`}
-                        style={{ transition: 'all 0.3s ease' }}
-                      />
-                    );
-                    return acc;
-                  }, [])}
-                  <text x="50" y="45" textAnchor="middle" fill="#fff" fontSize="14" fontWeight="bold">
-                    ₹{Math.round(totalMonthlyCost)}
-                  </text>
-                  <text x="50" y="58" textAnchor="middle" fill="#64748b" fontSize="8">
-                    /month
-                  </text>
-                </svg>
+              <div style={{ width: '100%', height: 220 }}>
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      dataKey="amount"
+                      nameKey="name"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={2}
+                      stroke="none"
+                    >
+                      {categoryData.map((cat, i) => (
+                        <Cell key={`cell-${i}`} fill={cat.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(val, name) => [`₹${Math.round(val)}`, name]} contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.08)' }} />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
               <div className="category-legend">
                 {categoryData.map((cat, i) => (

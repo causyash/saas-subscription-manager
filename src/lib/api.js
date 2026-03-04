@@ -23,10 +23,16 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear auth data if token is invalid/expired
-      localStorage.removeItem("token");
-      localStorage.removeItem("userData");
-      window.location.href = "/login"; // Redirect to login
+      const cfg = error.config || {};
+      const url = (cfg.url || "").toString();
+      const method = (cfg.method || "").toLowerCase();
+      // Do NOT redirect for subscription creation failures; let UI handle gracefully
+      const isSubscriptionCreate = url.endsWith("/subscriptions") && method === "post";
+      if (!isSubscriptionCreate) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("userData");
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }
